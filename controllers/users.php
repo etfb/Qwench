@@ -104,7 +104,7 @@ function create() {
 	$password = sha1(SALT.$password.$email);
 
 	$sql = ("insert into users (name,email,password,points,moderator,created,lastactivity) values ('".escape($name)."','".escape($email)."','".escape($password)."','1','0',NOW(),NOW())");
-	$query = mysqli_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
 	validate();
 
