@@ -24,19 +24,19 @@ if (!empty($path[1])) { $action = $path[1]; if ($_GET['type'] == "active") { $_G
 
 /* Include Libraries */
 
-include_once ROOT.DS.'config.php';
-include_once ROOT.DS.'libraries'.DS.'template.class.php';
-include_once ROOT.DS.'libraries'.DS.'helper.class.php';
+include_once 'config.php';
+include_once 'libraries/template.class.php';
+include_once 'libraries/helper.class.php';
 
 $template = new Template($controller,$action);
 $helper = new Helper();
 
-include_once ROOT.DS.'libraries'.DS.'shared.php';
-include_once ROOT.DS.'libraries'.DS.'markdown.php';
-include_once ROOT.DS.'libraries'.DS.'timeago.php';
-include_once ROOT.DS.'libraries'.DS.'score.php';
-include_once ROOT.DS.'libraries'.DS.'pagination.class.php';
-include_once ROOT.DS.'controllers'.DS.'helpers.php';
+include_once 'libraries/shared.php';
+include_once 'libraries/markdown.php';
+include_once 'libraries/timeago.php';
+include_once 'libraries/score.php';
+include_once 'libraries/pagination.class.php';
+include_once 'controllers/helpers.php';
 
 
 /* Check Debug vs Production Mode */
@@ -52,14 +52,12 @@ if (DEBUG_MODE == '1')
 
 /* Basic Bootstrapping */
 
-if (preg_match('/^[a-z]+$/',$controller)) {
-	include ROOT.DS.'controllers'.DS.$controller.'.php';
-	if (function_exists($action)) {
-		call_user_func($action);
-	} else {
-		call_user_func('index');
-	}
-	if ($norender == false) {
-		$template->render($noheader);
-	}
+include 'controllers/'.$controller.'.php';
+if (function_exists($action)) {
+	call_user_func($action);
+} else {
+	call_user_func('index');
+}
+if ($norender == false) {
+	$template->render($noheader);
 }
