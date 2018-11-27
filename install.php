@@ -117,8 +117,8 @@ CREATE TABLE `questions` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `title` text character set latin1 NOT NULL,
   `description` text character set latin1 NOT NULL,
-  `created` timestamp NOT NULL default '0000-00-00 00:00:00',
-  `updated` timestamp NOT NULL default '0000-00-00 00:00:00',
+  `created` timestamp NOT NULL default '1970-01-01 00:00:01',
+  `updated` timestamp NOT NULL default '1970-01-01 00:00:01',
   `link` text character set latin1 NOT NULL,
   `userid` int(10) unsigned NOT NULL,
   `linkcache` longtext character set latin1 NOT NULL,
@@ -233,5 +233,5 @@ foreach ($q as $query) {
 </html>
 
 <?php
-unlink(install.php);
+@unlink('install.php');
 ?>
