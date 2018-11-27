@@ -55,7 +55,7 @@ if (DEBUG_MODE == '1')
 include 'controllers/'.$controller.'.php';
 if (function_exists($action)) {
 	call_user_func($action);
-} else {
+} elseif (function_exists('index')) {
 	call_user_func('index');
 }
 if ($norender == false) {

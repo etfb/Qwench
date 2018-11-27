@@ -10,6 +10,7 @@ function noRender() {
 }
 
 function authenticate($force = 0) {
+	global $dbh;
 	global $template;
 	global $controller;
 	global $action;
