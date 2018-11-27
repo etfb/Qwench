@@ -917,7 +917,7 @@ function index() {
 
 	$offset = ($page-1)*QUESTIONS_PER_PAGE;
 
-	$sql = ("select count(questions.id) count from questions $conditionspre WHERE $conditionspost 1");
+	$sql = ("select count(questions.id) `count` from questions $conditionspre WHERE $conditionspost 1");
 	$query = mysqli_query($dbh,$sql);
 	$result = mysqli_fetch_array(mysqli_query($dbh,$sql));
  

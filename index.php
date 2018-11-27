@@ -11,8 +11,7 @@ define('ROOT',DIRNAME(__FILE__));
 define('DS',DIRECTORY_SEPARATOR);
 
 /* Get Basic Details */
-
-$path = explode("/", substr($_SERVER['PATH_INFO'],1));
+$path = explode("/", substr(@$_SERVER['PATH_INFO'],1));
 
 $controller = 'questions';
 $action = 'index';
@@ -53,12 +52,14 @@ if (DEBUG_MODE == '1')
 
 /* Basic Bootstrapping */
 
-include ROOT.DS.'controllers'.DS.$controller.'.php';
-if (function_exists($action)) {
-	call_user_func($action);
-} else {
-	call_user_func('index');
-}
-if ($norender == false) {
-	$template->render($noheader);
+if (preg_match('/^[a-z]+$/',$controller)) {
+	include ROOT.DS.'controllers'.DS.$controller.'.php';
+	if (function_exists($action)) {
+		call_user_func($action);
+	} else {
+		call_user_func('index');
+	}
+	if ($norender == false) {
+		$template->render($noheader);
+	}
 }
