@@ -3,8 +3,9 @@
 include (dirname(__FILE__))."/config.php";
 
 function db() {
-	$dbh = mysql_connect(SERVERNAME.':'.SERVERPORT,DBUSERNAME,DBPASSWORD);
-	return mysql_selectdb(DBNAME,$dbh);
+	global $dbh;
+	$dbh = mysqli_connect(SERVERNAME.':'.SERVERPORT,DBUSERNAME,DBPASSWORD);
+	return mysqli_select_db($dbh,DBNAME);
 }
 
 $message = 'Database import completed. ';
@@ -188,10 +189,10 @@ $q = preg_split('/;[\r\n]+/',$content);
 
 foreach ($q as $query) {
   if (strlen($query) > 4) {
-    $result = mysql_query($query);
+    $result = mysqli_query($dbh,$query);
     if (!$result) {
       $rollback = 1;
-      $errors .= mysql_error()."<br/>\n";
+      $errors .= mysqli_error($dbh)."<br/>\n";
     }
   }
 }

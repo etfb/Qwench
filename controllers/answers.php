@@ -1,6 +1,8 @@
 <?php
 
 function edit() {
+	global $dbh;
+
 	authenticate(1);
 
 	global $path;
@@ -21,14 +23,16 @@ EOD;
 	$template->set('js',$js);
 
 	$sql = ("select * from answers where id = '".escape($answerid)."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	$template->set('description',$result['description']);
 	$template->set('answerid',$result['id']);
 }
 
 function post() {
+	global $dbh;
+
 	authenticate(1);
 	$basePath = basePath();
 
@@ -36,8 +40,8 @@ function post() {
 	$questionid = sanitize($_POST['questionid'],"int");
 
 	$sql = ("select * from questions where id = '".escape($questionid)."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	if (strlen($description) < 15 || $result['id'] == '' || $result['id'] == 0) {
 		header("Location: $basePath/questions/view/$questionid/{$result['slug']}");
@@ -45,27 +49,29 @@ function post() {
 	}
 
 	$sql = ("insert into answers (questionid,description,created,updated,userid,accepted,votes) values ('".escape($questionid)."','".escape($description)."',NOW(),NOW(),'".escape($_SESSION['userid'])."','0','0')");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
 	$sql = ("update questions set updated = NOW(), answers=answers+1 where id = '".escape($result['id'])."'");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
 	header("Location: $basePath/questions/view/$questionid/{$result['slug']}");
 }
 
 function update() {
+	global $dbh;
+
 	authenticate(1);
 
 	$answerid = sanitize($_POST['id'],"int");
 	$description = sanitize($_POST['description'],"markdown");
 
 	$sql = ("select * from answers where id = '".escape($answerid)."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	$sql = ("select * from questions where id = '".escape($result['questionid'])."'");
-	$query = mysql_query($sql);
-	$qresult = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$qresult = mysqli_fetch_array($query);
 
 	if ($qresult['userid'] != $_SESSION['userid']) {
 		$basePath = basePath();
@@ -73,10 +79,10 @@ function update() {
 	}
 	
 	$sql = ("update answers set description = '".escape($description)."', updated = NOW() where userid = '".escape($_SESSION['userid'])."' and id = '".escape($answerid)."'");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
 	$sql = ("update questions set updated = NOW() where id = '".escape($result['questionid'])."'");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
 	$basePath = basePath();
 
@@ -84,6 +90,8 @@ function update() {
 }
 
 function vote() {
+	global $dbh;
+
 	if ($_SESSION['userid'] == '') {
 		echo "0Please login to vote";
 		exit;
@@ -99,9 +107,9 @@ function vote() {
 	}
 
 	$sql = ("select answers.userid,answers_votes.id qvid,answers_votes.vote qvvote from answers left join answers_votes on (answers.id = answers_votes.answerid and answers_votes.userid =  '".escape($_SESSION['userid'])."') where answers.id = '".escape($id)."'");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
-	$answer = mysql_fetch_array($query);
+	$answer = mysqli_fetch_array($query);
 
 	if ($answer['userid'] == $_SESSION['userid']) {
 		echo "0"."You cannot up/down vote your own answer";
@@ -137,11 +145,11 @@ function vote() {
 		}
 
 		$sql = ("update answers_votes set vote = vote".escape($vote)." where id = '".$answer['qvid']."'");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 
 	} else {
 		$sql = ("insert into answers_votes (answerid,userid,vote) values ('".escape($id)."','".escape($_SESSION['userid'])."','".escape($vote)."')");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 
 		if ($vote == 1) {
 			score('a_upvoted',$id,$answer['userid']);
@@ -153,7 +161,7 @@ function vote() {
 	}
 	
 	$sql_nest = ("update answers set votes = votes".escape($vote)." where id = '".escape($id)."'");
-	$query_nest = mysql_query($sql_nest);
+	$query_nest = mysqli_query($dbh,$sql_nest);
 	
 	echo "1Thankyou for voting";
 	exit;
@@ -161,17 +169,19 @@ function vote() {
 }
 
 function accept() {
+	global $dbh;
+
 	authenticate(1);
 
 	$answerid = sanitize($_GET['id'],"int");
 
 	$sql = ("select questionid,userid from answers where id = '".escape($answerid)."'");
-	$query = mysql_query($sql);
-	$answer = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$answer = mysqli_fetch_array($query);
 
 	$sql = ("select questions.*,answers.id answerid, answers.userid answeruserid from questions left join answers on (questions.id = answers.questionid and answers.accepted = 1) where questions.id = '".escape($answer['questionid'])."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	if ($result['kb'] == 1) {
 		header("Location: $basePath/questions/view/{$result['id']}/{$result['slug']}");
@@ -186,11 +196,11 @@ function accept() {
 
 	if ($result['userid'] == $_SESSION['userid']) {
 		$sql = ("update answers set accepted = '0' where questionid = '".escape($result['id'])."'");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 		$sql = ("update answers set accepted = '1' where questionid = '".escape($result['id'])."' and id = '".escape($answerid)."'");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 		$sql = ("update questions set accepted = '1' where id = '".escape($result['id'])."' and userid = '".escape($_SESSION['userid'])."'");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 		
 		score('a_accepted',$answerid,$answer['userid']);
 

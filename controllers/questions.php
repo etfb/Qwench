@@ -39,6 +39,8 @@ EOD;
 }
 
 function edit() {
+	global $dbh;
+
 	authenticate(1);
 
 	global $path;
@@ -77,8 +79,8 @@ EOD;
 	$template->set('js',$js);
 
 	$sql = ("select * from questions where id = '".escape($questionid)."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	$template->set('title',$result['title']);
 	$template->set('description',$result['description']);
@@ -86,11 +88,11 @@ EOD;
 	$template->set('kb',$result['kb']);
 
 	$sql = ("select tag from tags_questions, tags where questionid = '".escape($questionid)."' and tags.id = tags_questions.tagid order by tag");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
 	$tags = array();
 
-	while ($result = mysql_fetch_array($query)) {
+	while ($result = mysqli_fetch_array($query)) {
 		$tags[] = $result['tag'];
 	}
 
@@ -101,6 +103,8 @@ EOD;
 }
 
 function post() {
+	global $dbh;
+
 	authenticate(1);
 	$basePath = basePath();
 
@@ -126,29 +130,29 @@ function post() {
 	}
 
 	$sql = ("insert into questions (title,description,created,updated,link,userid,slug,linkcache,votes,accepted,answers,kb) values ('".escape($title)."','".escape($description)."',NOW(),NOW(),'".escape($link)."','".escape($_SESSION['userid'])."','".escape($slug)."','".escape($cache)."','0','0','0','".escape($kb)."')");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
-	$questionid = mysql_insert_id();
+	$questionid = mysqli_insert_id($dbh);
 
 	if (!empty($_POST['tags'])) {
 		foreach ($_POST['tags'] as $tag) {
 			$tag = createSlug($tag);
 
 			$sql = ("select * from tags where tag = '".escape($tag)."'");
-			$query = mysql_query($sql);
-			$result = mysql_fetch_array($query);
+			$query = mysqli_query($dbh,$sql);
+			$result = mysqli_fetch_array($query);
 
 			if ($result['id'] > 0) {
 				$sql = ("insert into tags_questions (tagid,questionid) values ('".escape($result['id'])."','".escape($questionid)."')");
-				$query = mysql_query($sql);
+				$query = mysqli_query($dbh,$sql);
 			} else {
 
 				$sql = ("insert into tags (tag) values ('".escape($tag)."')");
-				$query = mysql_query($sql);
-				$tagid = mysql_insert_id();
+				$query = mysqli_query($dbh,$sql);
+				$tagid = mysqli_insert_id($dbh);
 
 				$sql = ("insert into tags_questions (tagid,questionid) values ('".escape($tagid)."','".escape($questionid)."')");
-				$query = mysql_query($sql);
+				$query = mysqli_query($dbh,$sql);
 			}					
 		}
 	}
@@ -156,7 +160,7 @@ function post() {
 	if (!empty($_POST['answer'])) {
 		$description = sanitize($_POST['answer'],"markdown");
 		$sql = ("insert into answers (questionid,description,created,updated,userid,accepted,votes) values ('".escape($questionid)."','".escape($description)."',NOW(),NOW(),'".escape($_SESSION['userid'])."','1','0')");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 	}
 
 	if ($kb == 1) {
@@ -168,6 +172,8 @@ function post() {
 
 
 function update() {
+	global $dbh;
+
 	authenticate(1);
 
 	$questionid = sanitize($_POST['id'],"int");
@@ -189,9 +195,9 @@ function update() {
 	}
 
 	$sql = ("select * from questions where id = '".escape($questionid)."'");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
-	$result = mysql_fetch_array($query);
+	$result = mysqli_fetch_array($query);
 
 	if ($result['userid'] != $_SESSION['userid']) {
 		$basePath = basePath();
@@ -211,12 +217,12 @@ function update() {
 	}
 
 	$sql = ("update questions set title = '".escape($title)."', kb = '".escape($kb)."', description = '".escape($description)."' , updated = NOW(), link = '".escape($link)."', slug = '".escape($slug)."' $cacheup where userid = '".escape($_SESSION['userid'])."' and id = '".escape($questionid)."'");
-	$query = mysql_query($sql);
-	echo mysql_error();
+	$query = mysqli_query($dbh,$sql);
+	echo mysqli_error($dbh);
 	 
 
 	$sql = ("delete from tags_questions where questionid = '".escape($questionid)."'");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
 	
 	if (!empty($_POST['tags'])) {
@@ -224,20 +230,20 @@ function update() {
 			$tag = createSlug($tag);
 
 			$sql = ("select * from tags where tag = '".escape($tag)."'");
-			$query = mysql_query($sql);
-			$result = mysql_fetch_array($query);
+			$query = mysqli_query($dbh,$sql);
+			$result = mysqli_fetch_array($dbh,$query);
 
 			if ($result['id'] > 0) {
 				$sql = ("insert into tags_questions (tagid,questionid) values ('".escape($result['id'])."','".escape($questionid)."')");
-				$query = mysql_query($sql);
+				$query = mysqli_query($dbh,$sql);
 			} else {
 
 				$sql = ("insert into tags (tag) values ('".escape($tag)."')");
-				$query = mysql_query($sql);
-				$tagid = mysql_insert_id();
+				$query = mysqli_query($dbh,$sql);
+				$tagid = mysqli_insert_id($dbh);
 
 				$sql = ("insert into tags_questions (tagid,questionid) values ('".escape($tagid)."','".escape($questionid)."')");
-				$query = mysql_query($sql);
+				$query = mysqli_query($dbh,$sql);
 			}					
 		}
 	}
@@ -249,16 +255,18 @@ function update() {
 }
 
 function fetchtags() {
+	global $dbh;
+
 	noRender();
 	
 	$tag = createSlug($_GET['tag']);
 
 	header('Content-type: application/json; charset=utf-8');
 	$sql = ("select * from tags where tag LIKE '%".escape($tag)."%'");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 	
 	$resultSet = array();
-	while ($result = mysql_fetch_array($query)) {
+	while ($result = mysqli_fetch_array($query)) {
 		$resultSet[] = array("caption" => $result['tag'], "value" => $result['tag']);
 	}
 	echo json_encode($resultSet);
@@ -267,14 +275,15 @@ function fetchtags() {
 
  
 function view() {
+	global $dbh;
 	global $path;
 	global $template;
 
 	$questionid = sanitize($path[2],"int");
 
 	$sql = ("select * from questions where id = '".escape($questionid)."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	$template->set('id',$result['id']);
 	$template->set('userid',$result['userid']);
@@ -293,10 +302,10 @@ function view() {
 	$template->set('cache',$cache);
 
 	$sql = ("select tag from tags_questions, tags where questionid = '".escape($questionid)."' and tags.id = tags_questions.tagid order by tag");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
 	$tags = array();
-	while ($result = mysql_fetch_array($query)) {
+	while ($result = mysqli_fetch_array($query)) {
 		$tags[] = $result['tag'];
 	}
 
@@ -304,8 +313,8 @@ function view() {
 
 	
 	$sql = ("select * from favorites where questionid = '".escape($questionid)."' and userid = '".escape($_SESSION['userid'])."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	$fave = 0;
 	if ($result['id'] > 0) { $fave = 1; }
@@ -314,8 +323,8 @@ function view() {
 
 
 	$sql = ("select sum(vote) count from questions_votes where questionid = '".escape($questionid)."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	$votes = $result['count'];
 	if ($votes == '') { $votes = 0; }
@@ -323,8 +332,8 @@ function view() {
 	$template->set('votes',$votes);
 
 	$sql = ("select vote from questions_votes where questionid = '".escape($questionid)."' and userid = '".escape($_SESSION['userid'])."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	$nvote = 0;
 	$pvote = 0;
@@ -343,11 +352,11 @@ function view() {
 
 	
 	$sql = ("select comments.id,comment,comments.userid,users.name username, comments_votes.id voted, comments.votes from comments left join users on comments.userid = users.id left join comments_votes on (comments_votes.commentid = comments.id and comments_votes.userid = '".escape($_SESSION['userid'])."') where type = '0' and typeid = '".escape($questionid)."' order by comments.created asc");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
 	$comments = array();
 	
-	while ($result = mysql_fetch_array($query)) {
+	while ($result = mysqli_fetch_array($query)) {
 		$pos = strpos($result['username'],' ');
 		if ($pos > 0) {
 			$result['username'] = substr($result['username'],0,$pos);
@@ -359,8 +368,8 @@ function view() {
 	$template->set('comments',$comments);
 
 	$sql = ("select count(id) count from answers where questionid = '".escape($questionid)."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	$template->set('answerscount',$result['count']);
 
@@ -403,23 +412,23 @@ function view() {
 	}
 
 	$sql = ("$sqlanswer (select answers.*,users.name username from answers,users where questionid = '".escape($questionid)."' and answers.userid = users.id and answers.accepted = '0' order by $order, created desc LIMIT ".ANSWERS_PER_PAGE." OFFSET $offset)");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
  
 
 	$answers = array();
-	while ($result = mysql_fetch_array($query)) {
+	while ($result = mysqli_fetch_array($query)) {
 
 		$sql_nest = ("select sum(vote) count from answers_votes where answerid = '".escape($result['id'])."'");
-		$query_nest = mysql_query($sql_nest);
-		$result_nest = mysql_fetch_array($query_nest);
+		$query_nest = mysqli_query($dbh,$sql_nest);
+		$result_nest = mysqli_fetch_array($query_nest);
 
 		$votes = $result_nest['count'];
 
 		if ($votes == '') { $votes = 0; }
 
 		$sql_nest = ("select vote from answers_votes where answerid = '".escape($result['id'])."' and userid = '".escape($_SESSION['userid'])."'");
-		$query_nest = mysql_query($sql_nest);
-		$result_nest = mysql_fetch_array($query_nest);
+		$query_nest = mysqli_query($dbh,$sql_nest);
+		$result_nest = mysqli_fetch_array($query_nest);
 
 		$nvote = 0;
 		$pvote = 0;
@@ -435,12 +444,12 @@ function view() {
 
 
 		$sql_nest = ("select comments.id,comment,comments.userid,users.name username, comments_votes.id voted, comments.votes from comments left join users on comments.userid = users.id left join comments_votes on (comments_votes.commentid = comments.id and comments_votes.userid = '".escape($_SESSION['userid'])."') where type = '1' and typeid = '".escape($result['id'])."' order by comments.created asc");
-		$query_nest = mysql_query($sql_nest);
+		$query_nest = mysqli_query($dbh,$sql_nest);
 
 		 
 		$comments = array();
 		
-		while ($result_nest = mysql_fetch_array($query_nest)) {
+		while ($result_nest = mysqli_fetch_array($query_nest)) {
 			$pos = strpos($result['username'],' ');
 			if ($pos > 0) {
 				$result['username'] = substr($result['username'],0,$pos);
@@ -691,6 +700,7 @@ EOD;
 }
 
 function cache() {
+	global $dbh;
 	global $path;
 	global $template;
 	global $noheader;
@@ -699,14 +709,16 @@ function cache() {
 	$questionid = sanitize($path[2],"int");
 
 	$sql = ("select * from questions where id = '".escape($questionid)."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	$template->set('cachelink',$result['link']);
 	$template->set('cache',$result['linkcache']);
 }
 
 function vote() {
+	global $dbh;
+
 	if ($_SESSION['userid'] == '') {
 		echo "0Please login to vote";
 		exit;
@@ -722,9 +734,9 @@ function vote() {
 	}
 
 	$sql = ("select questions.userid,questions_votes.id qvid,questions_votes.vote qvvote from questions left join questions_votes on (questions.id = questions_votes.questionid and questions_votes.userid =  '".escape($_SESSION['userid'])."') where questions.id = '".escape($id)."'");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
-	$question = mysql_fetch_array($query);
+	$question = mysqli_fetch_array($query);
 
 	if ($question['userid'] == $_SESSION['userid']) {
 		echo "0"."You cannot up/down vote your own question";
@@ -760,11 +772,11 @@ function vote() {
 		}
 
 		$sql = ("update questions_votes set vote = vote".escape($vote)." where id = '".$question['qvid']."'");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 
 	} else {
 		$sql = ("insert into questions_votes (questionid,userid,vote) values ('".escape($id)."','".escape($_SESSION['userid'])."','".escape($vote)."')");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 
 		if ($vote == 1) {
 			score('q_upvoted',$id,$question['userid']);
@@ -776,7 +788,7 @@ function vote() {
 	}
 	
 	$sql_nest = ("update questions set votes = votes".escape($vote)." where id = '".escape($id)."'");
-	$query_nest = mysql_query($sql_nest);
+	$query_nest = mysqli_query($dbh,$sql_nest);
 	
 	echo "1Thankyou for voting";
 	exit;
@@ -784,6 +796,8 @@ function vote() {
 }
 
 function fave() {
+
+	global $dbh;
 
 	if ($_SESSION['userid'] == '') {
 		echo "0Please login to add a question to your favorites";
@@ -793,17 +807,17 @@ function fave() {
 	$id = sanitize($_POST['id'],"int");
 
 	$sql = ("select * from favorites where questionid = '".escape($id)."' and userid = '".escape($_SESSION['userid'])."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 	if ($result['id'] > 0) { 
 		$sql = ("delete from favorites where questionid = '".escape($id)."' and userid = '".escape($_SESSION['userid'])."'");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 		echo "1Question removed from your favorites";
 
 	} else {
 		$sql = ("insert into favorites (questionid,userid) values ('".escape($id)."','".escape($_SESSION['userid'])."')");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 		echo "1Question added to your favorites";
 	}
 
@@ -813,6 +827,7 @@ function fave() {
 }
 
 function index() {
+	global $dbh;
 	global $path;
 	global $template;
 	
@@ -903,8 +918,8 @@ function index() {
 	$offset = ($page-1)*QUESTIONS_PER_PAGE;
 
 	$sql = ("select count(questions.id) count from questions $conditionspre WHERE $conditionspost 1");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array(mysql_query($sql));
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array(mysqli_query($dbh,$sql));
  
 	$template->set('questionscount',$result['count']);
 
@@ -924,17 +939,17 @@ function index() {
 	$template->set('extratitle',$extratitle);
 
 	$sql = ("select questions.* $conditionsselect from questions $conditionspre WHERE $conditionspost 1 order by $order, created desc LIMIT ".QUESTIONS_PER_PAGE." OFFSET $offset");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
  
 	$questions = array();
 	
-	while ($result = mysql_fetch_array($query)) {
+	while ($result = mysqli_fetch_array($query)) {
 
 		$sql_nest = ("select tag from tags_questions, tags where questionid = '".escape($result['id'])."' and tags.id = tags_questions.tagid order by tag");
-		$query_nest = mysql_query($sql_nest);
+		$query_nest = mysqli_query($dbh,$sql_nest);
 
 		$tags = array();
-		while ($result_nest = mysql_fetch_array($query_nest)) {
+		while ($result_nest = mysqli_fetch_array($query_nest)) {
 			$tags[] = $result_nest['tag'];
 		}
 			

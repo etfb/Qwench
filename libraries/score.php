@@ -1,6 +1,7 @@
 <?php
 
 function score($activity = 'none',$id = 0,$userid = 0) {
+	global $dbh;
 
 	if ($userid == 0) { $userid = $_SESSION['userid']; }
 
@@ -90,8 +91,8 @@ function score($activity = 'none',$id = 0,$userid = 0) {
 	
 	if ($points != 0) {
 		$sql = ("insert into activities (userid,activity,points,activityid,created) values ('".escape($userid)."','".escape($activity)."','".escape($points)."','".escape($id)."',NOW())");
-		$query = mysql_query($sql);
-		echo mysql_error();
+		$query = mysqli_query($dbh,$sql);
+		echo mysqli_error($dbh);
 	}
 	
 	if ($points >= 0) {
@@ -99,6 +100,6 @@ function score($activity = 'none',$id = 0,$userid = 0) {
 	}
 
 	$sql = ("update users set points = points".escape($points)." where id = '".escape($userid)."' and (points".escape($points).") > 1");
-	$query = mysql_query($sql);
-	echo mysql_error();
+	$query = mysqli_query($dbh,$sql);
+	echo mysqli_error($dbh);
 }

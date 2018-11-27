@@ -19,8 +19,8 @@ function authenticate($force = 0) {
 	if (!empty($_SESSION['email']) && !empty($_SESSION['password'])) {
 
 		$sql = ("select id,name,points from users where email = '".escape($_SESSION['email'])."' and password = '".escape($_SESSION['password'])."'");
-		$query = mysql_query($sql);
-		$user = mysql_fetch_array($query);
+		$query = mysqli_query($dbh,$sql);
+		$user = mysqli_fetch_array($query);
 
 		if ($user['id'] > 0) {
 			$_SESSION['points'] = $user['points'];
@@ -93,7 +93,9 @@ function sanitize($input,$type = "old") {
 
 
 function escape($input) {
-	$input = mysql_real_escape_string($input);
+	global $dbh;
+
+	$input = mysqli_real_escape_string($dbh,$input);
 	return $input;
 }
 
@@ -130,8 +132,9 @@ function fetchURL($url) {
 }
 
 function db() {
-	$dbh = mysql_connect(SERVERNAME.':'.SERVERPORT,DBUSERNAME,DBPASSWORD);
-	return mysql_selectdb(DBNAME,$dbh);
+	global $dbh;
+	$dbh = mysqli_connect(SERVERNAME.':'.SERVERPORT,DBUSERNAME,DBPASSWORD);
+	return mysqli_select_db($dbh,DBNAME);
 }
 
 function basePath() {

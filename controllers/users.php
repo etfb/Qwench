@@ -7,14 +7,15 @@ function login() {
 
 function view() {
 
+	global $dbh;
 	global $path;
 	global $template;
 
 	$userid = sanitize($path[2],"int");
 
 	$sql = ("select * from users where id = '".escape($userid)."'");
-	$query = mysql_query($sql);
-	$user = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$user = mysqli_fetch_array($query);
 
 	$basePath = basePath();
 
@@ -22,16 +23,20 @@ function view() {
 }
 
 function edit() {
+	global $dbh;
+
 	authenticate(1);
 	global $template;
 	$sql = ("select * from users where id = '".escape($_SESSION['userid'])."'");
-	$query = mysql_query($sql);
-	$user = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$user = mysqli_fetch_array($query);
 	$basePath = basePath();
 	$template->set('user',$user);
 }
 
 function update() {
+	global $dbh;
+
 	authenticate(1);
 	global $template;
 
@@ -42,11 +47,11 @@ function update() {
 
 	if (!empty($_POST['password'])) {
 		$sql = ("update users set password = '".escape($password)."' where id = '".escape($_SESSION['userid'])."'");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 	}
 
 	$sql = ("update users set name = '".escape($name)."', email = '".escape($email)."' where id = '".escape($_SESSION['userid'])."'");
-	$query = mysql_query($sql);
+	$query = mysqli_query($sql);
 
 	$slug = createslug($name);
 
@@ -55,13 +60,15 @@ function update() {
 }
 
 function validate() {
+	global $dbh;
+
 	$email = sanitize($_POST['email'],"email");
 	$password = sanitize($_POST['password'],"string");
 	$password = sha1(SALT.$password.$email);
 
 	$sql = "select * from users where email = '".escape($email)."' and password = '".escape($password)."'";
-	$query_result = mysql_query($sql);
-	$user = mysql_fetch_array($query_result);
+	$query_result = mysqli_query($dbh,$sql);
+	$user = mysqli_fetch_array($query_result);
 
 	$basePath = basePath();
 
@@ -89,13 +96,15 @@ function register() {
 }
 
 function create() {
+	global $dbh;
+
 	$name = sanitize($_POST['name'],"string");
 	$email = sanitize($_POST['email'],"email");
 	$password = sanitize($_POST['password'],"string");
 	$password = sha1(SALT.$password.$email);
 
 	$sql = ("insert into users (name,email,password,points,moderator,created,lastactivity) values ('".escape($name)."','".escape($email)."','".escape($password)."','1','0',NOW(),NOW())");
-	$query = mysql_query($sql);
+	$query = mysqli_query($sql);
 
 	validate();
 
@@ -109,19 +118,20 @@ function logout() {
 }
 
 function index() {
+	global $dbh;
 	global $template;
 
 	$sql = ("select count(id) count from users");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 	$template->set('count',$result['count']);
 
 	$sql = ("select * from users order by points desc, name asc");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
 	$users = array();
 
-	while ($result = mysql_fetch_array($query)) {
+	while ($result = mysqli_fetch_array($query)) {
 		$users[] = array ("id" => $result['id'], "name" => $result['name'], "points" => $result['points']);
 	}
 

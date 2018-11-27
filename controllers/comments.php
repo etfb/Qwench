@@ -1,6 +1,8 @@
 <?php
 
 function post() {
+	global $dbh;
+
 	if ($_SESSION['userid'] == '') {
 		echo "0";
 		exit;
@@ -27,7 +29,7 @@ function post() {
 	}
 	
 	$sql = ("insert into comments (type,comment,votes,created,userid,typeid) values ('".escape($type)."','".escape($comment)."','0',NOW(),'".escape($_SESSION['userid'])."','".escape($typeid)."')");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
  
 	$template->set('comment',$comment);
 	
@@ -43,6 +45,8 @@ function post() {
 }
 
 function vote() {
+	global $dbh;
+
 	if ($_SESSION['userid'] == '') {
 		echo "0Please login to vote";
 		exit;
@@ -51,8 +55,8 @@ function vote() {
 	$id = sanitize($_POST['id'],"int");
 
 	$sql = ("select userid from comments where id = '".escape($id)."'");
-	$query = mysql_query($sql);
-	$comment = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$comment = mysqli_fetch_array($query);
 
 	if ($comment['userid'] == $_SESSION['userid']) {
 		echo "0You cannot upvote your own comment";
@@ -60,23 +64,23 @@ function vote() {
 	}
 
 	$sql = ("select * from comments_votes where commentid = '".escape($id)."' and userid = '".escape($_SESSION['userid'])."'");
-	$query = mysql_query($sql);
-	$result = mysql_fetch_array($query);
+	$query = mysqli_query($dbh,$sql);
+	$result = mysqli_fetch_array($query);
 
 
 	if ($result['id'] > 0) { 
 
 		$sql = ("delete from comments_votes where commentid = '".escape($id)."' and userid = '".escape($_SESSION['userid'])."'");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 		$sql_nest = ("update comments set votes = votes-1 where id = '".escape($id)."'");
-		$query_nest = mysql_query($sql_nest);
+		$query_nest = mysqli_query($dbh,$sql_nest);
 		score('c_upvoted_removed',$id,$comment['userid']);
 	
 	} else {
 		$sql = ("insert into comments_votes (commentid,userid) values ('".escape($id)."','".escape($_SESSION['userid'])."')");
-		$query = mysql_query($sql);
+		$query = mysqli_query($dbh,$sql);
 		$sql_nest = ("update comments set votes = votes+1 where id = '".escape($id)."'");
-		$query_nest = mysql_query($sql_nest);
+		$query_nest = mysqli_query($dbh,$sql_nest);
 		score('c_upvoted',$id,$comment['userid']);
 	}
 
@@ -86,11 +90,12 @@ function vote() {
 }
 
 function del() {
+	global $dbh;
 
 	$id = sanitize($_POST['id'],"int");
 
 	$sql = ("delete from comments where id = '".escape($id)."' and userid = '".escape($_SESSION['userid'])."'");
-	$query = mysql_query($sql);
+	$query = mysqli_query($dbh,$sql);
 
 	echo "1Comment successfully deleted";
 	exit;
